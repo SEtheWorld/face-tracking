@@ -1,17 +1,3 @@
-import tensorflow as tf 
-import tensorflow.keras
-
-import numpy as np
-
-
-
-tf.keras.backend.clear_session()
-
-def change_model(path):
-    model = tf.lite.Interpreter(path)
-    config = model.get_tensor_details()
-    print(config)
-
-
-if __name__ == "__main__":
-    change_model('model/lite-model_object_detection_mobile_object_labeler_v1_1.tflite')
+## CAN NOT CHANGE STRUCTURE OF A TFLITE MODEL.
+## TRAIN MODEL IN H5 OR PB FORMAT -> CHANGE ITS STRUCTURE -> CONVERT TO TFLITE
+## https://colab.research.google.com/drive/1s1lkOiqKgl9_MsXJtPF--oh6uXHYkNYm
