@@ -64,8 +64,8 @@ class Pipeline:
             if self.controller.trigger_extract():
                 cv2.imwrite("output/image.png", self.trackers.visualize(self.frame))
                 faces = self.trackers.extract_face(self.frame)
-                for face in faces:
-                    print(self.predictor.classify_image(face))
+                for idx in faces.keys():
+                    print(self.predictor.classify_image(faces[idx]))
 
     def run(self):
         camera_thread = Thread(target=self.camera.start_camera).start()
