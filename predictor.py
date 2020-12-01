@@ -1,4 +1,9 @@
+# For testing
 import tensorflow as tf
+
+# For Pi
+# from tflite_runtime.interpreter import Interpreter
+
 import numpy as np
 from PIL import Image
 import time
@@ -12,7 +17,12 @@ def load_labels(path):
 class Predictor:
     def __init__(self, model_path, label_path):
         self.label = load_labels(label_path)
+        #For testing
         self.interpreter = tf.lite.Interpreter(model_path)
+
+        # For Pi
+        # self.interpreter = Interpreter(model_path)
+        
         self.interpreter.allocate_tensors()
         _, self.height, self.width, _ = self.interpreter.get_input_details()[0]["shape"]
 
