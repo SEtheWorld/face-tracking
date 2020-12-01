@@ -7,7 +7,7 @@ class FaceDetector(ABC):
         raise NotImplementedError
 
 class HaarDetector(FaceDetector):
-    def __init__(self, cascPath="./haarcascade_frontalface_default.xml"):
+    def __init__(self, cascPath="./model/haarcascade_frontalface_default.xml"):
         self.faceCascade = cv2.CascadeClassifier(cascPath)
 
     def detect(self, frame):

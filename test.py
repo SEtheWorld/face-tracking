@@ -1,5 +1,7 @@
-from utils.utils import get_iou
+from predictor import Predictor
+import cv2
 
-box1 = (0,0,100,100)
-box2= (50,50,100,100)
-print(get_iou(box1,box2))
+predictor =  Predictor(model_path='/home/baophuc/ARI/Face/face_tracking/model/lite-model_object_detection_mobile_object_labeler_v1_1.tflite',
+                    label_path='/home/baophuc/ARI/Face/face_tracking/model/mobile_object_labeler_v1_labelmap.csv')
+image = cv2.imread('frame.png')
+print(predictor.classify_image(image))
