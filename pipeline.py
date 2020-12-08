@@ -6,7 +6,9 @@ from face_tracker import MultiFaceTracker
 from controller import Controller
 from camera import Camera
 from predictor import Predictor
-from threading import Thread, active_count
+from threading import Thread, active_count, Lock
+import multiprocessing
+from task_consumer import Consumer,Task
 import cv2
 
 
@@ -21,6 +23,11 @@ class Pipeline:
         self.predictor = Predictor(config.model, config.label)
         self.frame = []
 
+        self.order_queue = multiprocessing.Queue()
+        order_queue = [0]*config.FRAME_FOR_REDETECT + [1]
+        for order in order_queue: 
+            self.order_queue.put(order)
+
     def initialize_tracker(self):
         """
         Keep detecting until get some faces
@@ -34,17 +41,6 @@ class Pipeline:
                 print("FACE DETECTED")
                 break
 
-    def get_camera_frame(self):
-        """
-        Set frame as a global variable to avoid data race.
-        """
-        while True:
-            self.frame = self.camera.get_frame()
-
-    def track(self):
-        while True:
-            self.trackers.update(self.frame)
-
     def check_redetect(self):
         """
         If redetect_flag is triggered, count_frame in controller will be set to 0 and redetect face.
@@ -55,6 +51,10 @@ class Pipeline:
                 self.controller.reset()
                 # In-progress
                 self.detector.detect(self.frame)
+    
+    def redetect(self,frame):
+        faces = self.detector.detect(frame)
+        print("Redetect got {} faces".format(len(faces)))
 
     def extract_image(self):
         """
@@ -73,16 +73,24 @@ class Pipeline:
         # Detect face for the first time
         initialize_thread = Thread(target=self.initialize_tracker)
         initialize_thread.start()
-        # initialize_thread.join()
+        initialize_thread.join()
 
-        # Get frame for all behind steps
-        pop_frame_thread = Thread(target=self.get_camera_frame).start()
 
-        # Redetect after a specific period, for ex (5 frame -> redetect)
-        detect_thread = Thread(target=self.check_redetect).start()
+        frame_queue = multiprocessing.Queue()
+        task_queue = multiprocessing.JoinableQueue()
 
-        # Keep tracking through program
-        track_thread = Thread(target=self.track).start()
+        consumer = Consumer(task_queue,frame_queue,self.trackers,self.detector)
+        consumer.start()
+        while True:
+            frame_queue.put(self.camera.get_frame())
+
+            # Remain order circle
+            order = self.order_queue.get()
+            self.order_queue.put(order)
+            frame = frame_queue.get()
+            task = Task(frame,self.trackers,self.detector,order)
+            task_queue.put(task)
+
 
         # Extract faces and send to inference stage after a specific period, for ex (5 frame -> extract faces -> infer)
         extract_thread = Thread(target=self.extract_image).start()

@@ -2,6 +2,7 @@ import cv2
 from collections import OrderedDict
 from utils.utils import get_iou, convert_box_to_int
 
+IOU_THRESHOLD= 0.8 
 
 class SingleFaceTracker:
     def __init__(self, frame, face):
@@ -12,13 +13,33 @@ class SingleFaceTracker:
     def update(self, frame):
         _, updated_face = self.tracker.update(frame)
         iou = get_iou(updated_face, self.face)
-        if iou > 0.7:
+        if iou > IOU_THRESHOLD:
             self.face = updated_face
             disappeared = False
         else:
             self.face = tuple([0.0, 0.0, 0.0, 0.0])
             disappeared = True
         return self.face, disappeared
+
+    def update_detect(self,detected_faces):
+        """Update tracker for redetect function
+            Delete face which can match with any face in tracker buffer
+
+        Args:
+            detected_faces ([type]): detected faces extract by Haar Cascade
+
+        Returns:
+            [Boolean]: True if any detected face can match with faces in buffer
+        """
+        for idx,detected_face in enumerate(faces):
+            iou = get_iou(detected_face,self.face)
+            if iou > IOU_THRESHOLD:
+                self.face = detected_face
+                del detected_faces[idx]
+                return True
+        return False
+
+
 
 
 class MultiFaceTracker:
@@ -29,7 +50,7 @@ class MultiFaceTracker:
         self.disappeared = OrderedDict()
         self.max_disappeared = max_disappeared
         for face in input_faces:
-            self.register(frame, face)
+            self.register(face, frame)
 
     def register(self, face, frame):
 
@@ -69,3 +90,10 @@ class MultiFaceTracker:
             (x,y,w,h) = convert_box_to_int(self.face_trackers[faceID].face)
             faces[faceID] = frame[x:x+w,y:y+h]
         return faces
+    
+    def update_detect(self,frame,faces):
+        for faceID in list(self.face_trackers.keys()):
+            self.face_trackers[faceID].update_detect(faces)
+        
+        for face in faces:
+            self.register(face,frame)

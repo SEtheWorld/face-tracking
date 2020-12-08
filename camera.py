@@ -22,7 +22,15 @@ class Camera:
             self.append_frame(self.cap.read()[1])
 
     def get_frame(self):
-        return self.frame.popleft()
+        try:
+            return self.frame.popleft()
+        except:
+            self.get_additional_frame()
+            return self.frame.popleft()
+    
+    def get_additional_frame(self):
+        _,frame = self.cap.read()
+        self.append_frame(frame)
 
     def append_frame(self, frame):
         self.controller.increase_frame()
