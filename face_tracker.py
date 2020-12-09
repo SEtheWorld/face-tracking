@@ -1,7 +1,7 @@
 import cv2
 from collections import OrderedDict
 from utils.utils import get_iou, convert_box_to_int
-
+import numpy as np
 IOU_THRESHOLD= 0.8 
 
 class SingleFaceTracker:
@@ -31,11 +31,11 @@ class SingleFaceTracker:
         Returns:
             [Boolean]: True if any detected face can match with faces in buffer
         """
-        for idx,detected_face in enumerate(faces):
+        for idx,detected_face in enumerate(detected_faces):
             iou = get_iou(detected_face,self.face)
             if iou > IOU_THRESHOLD:
                 self.face = detected_face
-                del detected_faces[idx]
+                detected_faces = np.delete(detected_faces,idx)
                 return True
         return False
 
@@ -75,6 +75,7 @@ class MultiFaceTracker:
     def visualize(self, frame):
         for faceID in list(self.face_trackers.keys()):
             (x, y, w, h) = convert_box_to_int(self.face_trackers[faceID].face)
+            cv2.imwrite("output/{}.png".format(faceID),frame[x:x+w,y:y+h])
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
             cv2.putText(

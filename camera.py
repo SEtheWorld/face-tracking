@@ -41,7 +41,7 @@ class Camera:
         Limit the amount of frames in buffer always less than fps
         """
         while True:
-            print("Buffer contains {} frames".format(len(self.frame)))
+            # print("Buffer contains {} frames".format(len(self.frame)))
             _, frame = self.cap.read()
             if len(self.frame) < self.fps:
                 self.append_frame(frame)

@@ -65,7 +65,7 @@ class Pipeline:
                 cv2.imwrite("output/image.png", self.trackers.visualize(self.frame))
                 faces = self.trackers.extract_face(self.frame)
                 for idx in faces.keys():
-                    print(self.predictor.classify_image(faces[idx]))
+                    info = self.predictor.classify_image(faces[idx])
 
     def run(self):
         camera_thread = Thread(target=self.camera.start_camera).start()
@@ -79,17 +79,24 @@ class Pipeline:
         frame_queue = multiprocessing.Queue()
         task_queue = multiprocessing.JoinableQueue()
 
-        consumer = Consumer(task_queue,frame_queue,self.trackers,self.detector)
-        consumer.start()
-        while True:
-            frame_queue.put(self.camera.get_frame())
+        def insert_frame():
+            while True:
+                self.frame = self.camera.get_frame()
+                frame_queue.put(self.frame)
 
-            # Remain order circle
-            order = self.order_queue.get()
-            self.order_queue.put(order)
-            frame = frame_queue.get()
-            task = Task(frame,self.trackers,self.detector,order)
-            task_queue.put(task)
+                # Remain order circle
+                order = self.order_queue.get()
+                self.order_queue.put(order)
+                
+                task = Task(self.frame,order)
+                task_queue.put(task)
+
+        insert_thread = Thread(target=insert_frame).start()
+        time.sleep(2)
+        consumer_thread = Consumer(task_queue,frame_queue,self.trackers,self.detector)
+        consumer_thread.start()
+        
+
 
 
         # Extract faces and send to inference stage after a specific period, for ex (5 frame -> extract faces -> infer)
