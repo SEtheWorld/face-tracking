@@ -1,9 +1,8 @@
-import time
-
 class Controller:
     """
     Handle trigger events for re-detecting and sending result to server
     """
+
     def __init__(self, reset_limit_frame, interval):
         self.reset_limit_frame = reset_limit_frame
         self.count_frame = 1
@@ -20,4 +19,3 @@ class Controller:
 
     def increase_frame(self):
         self.count_frame += 1
-    

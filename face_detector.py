@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 import cv2
 
+
 class FaceDetector(ABC):
     @abstractmethod
     def detect(self, frame):
         raise NotImplementedError
+
 
 class HaarDetector(FaceDetector):
     def __init__(self, cascPath="./model/haarcascade_frontalface_default.xml"):

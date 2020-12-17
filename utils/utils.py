@@ -38,8 +38,8 @@ def resize_image(image, size_limit=500.0):
 def get_iou(bbox1, bbox2):
 
     # Bounding box follows (x,y,w,h) order
-    (x1, y1, w1, h1) = map(lambda x: int(x), bbox1)
-    (x2, y2, w2, h2) = map(lambda x: int(x), bbox2)
+    (x1, y1, w1, h1) = map(int, bbox1)
+    (x2, y2, w2, h2) = map(int, bbox2)
 
     max_size = (max(x1 + w1, x2 + w2), max(y1 + h1, y2 + h2))
 

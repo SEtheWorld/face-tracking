@@ -1,5 +1,8 @@
 # For testing
 import tensorflow as tf
+import multiprocessing
+import asyncio
+import base64
 
 # For Pi
 # from tflite_runtime.interpreter import Interpreter
@@ -14,15 +17,17 @@ def load_labels(path):
         return {i: line.strip() for i, line in enumerate(f.readlines())}
 
 
-class Predictor:
-    def __init__(self, model_path, label_path):
+class Predictor(multiprocessing.Process):
+    def __init__(self, model_path, label_path, result_queue, infer_lock):
+        multiprocessing.Process.__init__(self)
+        self.result_queue = result_queue
         self.label = load_labels(label_path)
-        #For testing
+        # For testing
         self.interpreter = tf.lite.Interpreter(model_path)
-
+        self.infer_lock = infer_lock
         # For Pi
         # self.interpreter = Interpreter(model_path)
-        
+
         self.interpreter.allocate_tensors()
         _, self.height, self.width, _ = self.interpreter.get_input_details()[0]["shape"]
 
@@ -42,12 +47,15 @@ class Predictor:
         """
 
         # convert CV2 BGR to PIL RGB image
-        image = (
-            Image.fromarray(frame)
-            .convert("RGB")
-            .resize((self.width, self.height), Image.ANTIALIAS)
-        )
-
+        try:
+            image = (
+                Image.fromarray(frame)
+                .convert("RGB")
+                .resize((self.width, self.height), Image.ANTIALIAS)
+            )
+        except Exception as e:
+            print(e)
+            return (0,0)
         start_time = time.time()
         self.set_input_tensor(image)
         self.interpreter.invoke()
@@ -66,3 +74,16 @@ class Predictor:
         label = results[0]
 
         return label, consumed_time
+
+    def run(self):
+        while True:
+            # with self.infer_lock:
+            result = self.result_queue.get()
+            label, infer_time = self.classify_image(result)
+            encoded_image = base64.b64encode(result)
+            metadata = {"image": encoded_image, "info": label}
+            print(label)
+            self.send(metadata)
+
+    def send(self, metadata):
+        pass
