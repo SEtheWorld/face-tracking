@@ -1,6 +1,5 @@
 import cv2
 import multiprocessing
-from controller import Controller
 
 
 class Producer(multiprocessing.Process):
@@ -13,18 +12,8 @@ class Producer(multiprocessing.Process):
         self.frame = frame_queue
         self.fps = 10
         self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
-        self.controller = Controller(
-            reset_limit_frame=config.FRAME_FOR_REDETECT, interval=config.INTERVAL
-        )
-
-    def get_additional_frame(self):
-        _, frame = self.cap.read()
-        self.append_frame(frame)
-
-    def append_frame(self, frame):
-        self.controller.increase_frame()
-        self.frame.put(frame)
+        self.cap.read()
+        # self.cap.set(cv2.CAP_PROP_FPS, self.fps)
 
     def run(self):
         """
@@ -33,13 +22,11 @@ class Producer(multiprocessing.Process):
         while True:
             print("Buffer contains {} frames".format(self.frame.qsize()))
             _, frame = self.cap.read()
+            print(frame)
+            cv2.imwrite("output/fr.png",frame)
             if self.frame.qsize() < self.fps:
-                self.append_frame(frame)
+                self.frame.put(frame)
 
     def release_camera(self):
         self.cap.release()
         cv2.destroyAllWindows()
-
-    @staticmethod
-    def visualize(frame):
-        cv2.imwrite("output/1.png", frame)

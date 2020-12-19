@@ -78,12 +78,13 @@ class Predictor(multiprocessing.Process):
     def run(self):
         while True:
             # with self.infer_lock:
-            result = self.result_queue.get()
-            label, infer_time = self.classify_image(result)
-            encoded_image = base64.b64encode(result)
-            metadata = {"image": encoded_image, "info": label}
-            print(label)
-            self.send(metadata)
+            if not self.result_queue.empty():
+                result = self.result_queue.get()
+                label, infer_time = self.classify_image(result)
+                encoded_image = base64.b64encode(result)
+                metadata = {"image": encoded_image, "info": label}
+                print(label)
+                self.send(metadata)
 
     def send(self, metadata):
         pass
