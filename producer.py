@@ -22,6 +22,7 @@ class Producer(multiprocessing.Process):
             print("Buffer contains {} frames".format(self.frame.qsize()))
             _, frame = self.cap.read()
             if self.frame.qsize() < self.fps:
+                frame = cv2.resize(frame,(224,224))
                 self.frame.put(frame)
 
     def release_camera(self):
