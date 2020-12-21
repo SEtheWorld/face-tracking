@@ -10,7 +10,7 @@ import base64
 import numpy as np
 from PIL import Image
 import time
-
+import logging
 
 def load_labels(path):
     with open(path, "r") as f:
@@ -54,7 +54,6 @@ class Predictor(multiprocessing.Process):
                 .resize((self.width, self.height), Image.ANTIALIAS)
             )
         except Exception as e:
-            print(e)
             return (0,0)
         start_time = time.time()
         self.set_input_tensor(image)
@@ -67,12 +66,13 @@ class Predictor(multiprocessing.Process):
             scale, zero_point = output_details["quantization"]
             output = scale * (output - zero_point)
 
-        consumed_time = (time.time() - start_time) * 1000
+        
         ordered = np.argpartition(-output, top_k)
         results = [(i, output[i]) for i in ordered[:top_k]]
 
         label = results[0]
-
+        consumed_time = (time.time() - start_time) * 1000
+        
         return label, consumed_time
 
     def run(self):
@@ -83,8 +83,8 @@ class Predictor(multiprocessing.Process):
                 label, infer_time = self.classify_image(result)
                 encoded_image = base64.b64encode(result)
                 metadata = {"image": encoded_image, "info": label}
-                print(label)
                 self.send(metadata)
+                logging.info("PREDICT: {}".format(infer_time))
 
     def send(self, metadata):
         pass

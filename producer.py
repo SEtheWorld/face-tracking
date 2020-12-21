@@ -10,10 +10,9 @@ class Producer(multiprocessing.Process):
     def __init__(self, frame_queue, config, track_lock):
         multiprocessing.Process.__init__(self)
         self.frame = frame_queue
-        self.fps = 10
+        self.fps = 5
         self.cap = cv2.VideoCapture(0)
-        self.cap.read()
-        # self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
 
     def run(self):
         """
@@ -22,8 +21,6 @@ class Producer(multiprocessing.Process):
         while True:
             print("Buffer contains {} frames".format(self.frame.qsize()))
             _, frame = self.cap.read()
-            print(frame)
-            cv2.imwrite("output/fr.png",frame)
             if self.frame.qsize() < self.fps:
                 self.frame.put(frame)
 

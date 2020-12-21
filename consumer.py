@@ -2,6 +2,8 @@ import multiprocessing
 from face_detector import HaarDetector
 from face_tracker import MultiFaceTracker
 import cv2
+import time
+import logging
 
 class Consumer(multiprocessing.Process):
     initialized = False
@@ -15,6 +17,7 @@ class Consumer(multiprocessing.Process):
         self.track_lock = track_lock
         self.infer_lock = infer_lock
         self.count = 0
+        logging.basicConfig(filename='track.log', filemode='w',level=logging.DEBUG)
 
     def initialize_tracker(self):
         """
@@ -23,7 +26,6 @@ class Consumer(multiprocessing.Process):
         while True:
             if not self.frame_queue.empty():
                 frame = self.frame_queue.get()
-                cv2.imwrite("output/test.png",frame)
                 faces = self.detector.detect(frame)
                 if len(faces) > 0:
                     for face in faces:
@@ -36,21 +38,28 @@ class Consumer(multiprocessing.Process):
     def run(self):
         if not Consumer.initialized:
             Consumer.initialized = self.initialize_tracker()
-
+        start_time =time.time()
+        time_track = time.time()
+        time_detect = time.time()
         while True:
             if not self.frame_queue.empty():
                 frame = self.frame_queue.get()
                 
                 self.trackers.visualize(frame)
                 if self.count < 10:
-                    print("TRACK")
                     self.trackers.update(frame)
                     self.count += 1
+                    logging.info("TRACK: {}".format((time.time()-time_track)*1000))
+                    time_track = time.time()
+                    
                 else:
-                    print("REDETECT")
                     faces = self.detector.detect(frame)
                     self.trackers.update_detect(frame, faces)
                     self.count = 0
+                    logging.info("REDETECT: {}".format((time.time()-time_detect)*1000))
+                    time_detect = time.time()
+
                     if self.result_queue.empty():
                         # with self.infer_lock:
                         self.trackers.get_result()
+
