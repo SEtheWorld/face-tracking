@@ -6,7 +6,7 @@ import time
 import random
 
 
-IOU_THRESHOLD = 0.8
+IOU_THRESHOLD = 0.9
 MIN_FACE_AREA = 2500
 TIME_LIMIT = 50
 

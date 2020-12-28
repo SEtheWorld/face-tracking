@@ -1,11 +1,11 @@
 # For testing
-import tensorflow as tf
+# import tensorflow as tf
 import multiprocessing
 import asyncio
 import base64
 
 # For Pi
-# from tflite_runtime.interpreter import Interpreter
+from tflite_runtime.interpreter import Interpreter
 
 import numpy as np
 from PIL import Image
@@ -23,10 +23,10 @@ class Predictor(multiprocessing.Process):
         self.result_queue = result_queue
         self.label = load_labels(label_path)
         # For testing
-        self.interpreter = tf.lite.Interpreter(model_path)
+        # self.interpreter = tf.lite.Interpreter(model_path)
         self.infer_lock = infer_lock
         # For Pi
-        # self.interpreter = Interpreter(model_path)
+        self.interpreter = Interpreter(model_path)
 
         self.interpreter.allocate_tensors()
         _, self.height, self.width, _ = self.interpreter.get_input_details()[0]["shape"]
