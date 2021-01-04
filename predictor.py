@@ -1,21 +1,24 @@
 # For testing
-# import tensorflow as tf
+import tensorflow as tf
 import multiprocessing
 import asyncio
 import base64
 
 # For Pi
-from tflite_runtime.interpreter import Interpreter
+# from tflite_runtime.interpreter import Interpreter
 
 import numpy as np
 from PIL import Image
 import time
 import logging
+from kafka import KafkaProducer
 
 def load_labels(path):
     with open(path, "r") as f:
         return {i: line.strip() for i, line in enumerate(f.readlines())}
 
+BOOTSTRAP_SERVERS = '115.78.234.111:9091'
+TOPIC = 'faceinfo'
 
 class Predictor(multiprocessing.Process):
     def __init__(self, model_path, label_path, result_queue, infer_lock):
@@ -23,13 +26,15 @@ class Predictor(multiprocessing.Process):
         self.result_queue = result_queue
         self.label = load_labels(label_path)
         # For testing
-        # self.interpreter = tf.lite.Interpreter(model_path)
+        self.interpreter = tf.lite.Interpreter(model_path)
         self.infer_lock = infer_lock
         # For Pi
-        self.interpreter = Interpreter(model_path)
+        # self.interpreter = Interpreter(model_path)
 
         self.interpreter.allocate_tensors()
         _, self.height, self.width, _ = self.interpreter.get_input_details()[0]["shape"]
+        self.producer = KafkaProducer(bootstrap_servers=BOOTSTRAP_SERVERS,
+                                        value_serializer = lambda value: bytes(value,encoding='utf-8'))
 
     def set_input_tensor(self, image):
         tensor_index = self.interpreter.get_input_details()[0]["index"]
@@ -87,4 +92,5 @@ class Predictor(multiprocessing.Process):
                 logging.info("PREDICT: {}".format(infer_time))
 
     def send(self, metadata):
-        pass
+        self.producer.send(TOPIC,metadata)
+        print("-------SENT-------")
